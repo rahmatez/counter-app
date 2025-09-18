@@ -8,7 +8,7 @@ describe('Counter Component', () => {
     render(<Counter />)
 
     // Test heading tampil
-    expect(screen.getByText('Counter App')).toBeInTheDocument()
+    expect(screen.getByText('Click & Count')).toBeInTheDocument()
 
     // Test nilai awal 0
     const countValue = screen.getByTestId('count-value')

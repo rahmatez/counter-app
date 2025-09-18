@@ -11,7 +11,7 @@ describe('App Component', () => {
     expect(heading).toHaveTextContent('Interactive Counter App')
 
     // Test counter component ada
-    expect(screen.getByText('Counter App')).toBeInTheDocument()
+    expect(screen.getByText('Click & Count')).toBeInTheDocument()
     expect(screen.getByTestId('count-value')).toBeInTheDocument()
     expect(screen.getByTestId('increment-btn')).toBeInTheDocument()
     expect(screen.getByTestId('decrement-btn')).toBeInTheDocument()

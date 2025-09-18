@@ -279,7 +279,7 @@ export class AsyncErrorBoundary extends Component<
           retryCount: retryCount + 1
         })
       }, retryDelay)
-    } catch (retryError) {
+    } catch {
       this.setState({
         isRetrying: false,
         retryCount: retryCount + 1
@@ -360,109 +360,3 @@ const AsyncErrorFallback: React.FC<AsyncErrorFallbackProps> = ({
     </div>
   )
 }
-
-// =============== HOC FOR ERROR HANDLING ===============
-export function withErrorBoundary<P extends Record<string, any>>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Partial<ErrorBoundaryProps>
-): React.ComponentType<P> {
-  const WrappedComponent: React.FC<P> = (props) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ErrorBoundary>
-  )
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
-
-  return WrappedComponent
-}
-
-// =============== ERROR BOUNDARY HOOK ===============
-export const useErrorHandler = () => {
-  const [error, setError] = React.useState<Error | null>(null)
-
-  const resetError = React.useCallback(() => {
-    setError(null)
-  }, [])
-
-  const captureError = React.useCallback((error: Error | string) => {
-    const errorInstance = typeof error === 'string' ? new Error(error) : error
-    setError(errorInstance)
-  }, [])
-
-  React.useEffect(() => {
-    if (error) {
-      throw error
-    }
-  }, [error])
-
-  return { captureError, resetError }
-}
-
-// =============== GLOBAL ERROR HANDLER ===============
-export class GlobalErrorHandler {
-  private static instance: GlobalErrorHandler | null = null
-  private errorListeners: Array<(error: Error) => void> = []
-
-  private constructor() {
-    this.setupGlobalErrorHandlers()
-  }
-
-  static getInstance(): GlobalErrorHandler {
-    if (!GlobalErrorHandler.instance) {
-      GlobalErrorHandler.instance = new GlobalErrorHandler()
-    }
-    return GlobalErrorHandler.instance
-  }
-
-  private setupGlobalErrorHandlers(): void {
-    // Handle unhandled errors
-    window.addEventListener('error', (event) => {
-      this.handleError(new Error(event.message))
-    })
-
-    // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      this.handleError(new Error(event.reason))
-    })
-  }
-
-  addErrorListener(listener: (error: Error) => void): void {
-    this.errorListeners.push(listener)
-  }
-
-  removeErrorListener(listener: (error: Error) => void): void {
-    const index = this.errorListeners.indexOf(listener)
-    if (index > -1) {
-      this.errorListeners.splice(index, 1)
-    }
-  }
-
-  private handleError(error: Error): void {
-    // Track error analytics
-    const analyticsEvent = createAnalyticsEvent('global_error', {
-      errorMessage: error.message,
-      errorStack: error.stack,
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    })
-    trackEvent(analyticsEvent)
-
-    // Notify listeners
-    this.errorListeners.forEach(listener => {
-      try {
-        listener(error)
-      } catch (listenerError) {
-        console.error('Error in error listener:', listenerError)
-      }
-    })
-
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Global error handler:', error)
-    }
-  }
-}
-
-// Initialize global error handler
-GlobalErrorHandler.getInstance()

@@ -468,3 +468,6 @@ export const conditionalClass = (
 ): string => {
   return condition ? trueClass : falseClass
 }
+
+// Re-export error utilities
+export * from './errorUtils'

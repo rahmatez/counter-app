@@ -33,7 +33,7 @@ export const isArray = <T>(value: unknown): value is T[] => {
   return Array.isArray(value)
 }
 
-export const isFunction = (value: unknown): value is Function => {
+export const isFunction = (value: unknown): value is (...args: unknown[]) => unknown => {
   return typeof value === 'function'
 }
 
@@ -41,7 +41,7 @@ export const isDefined = <T>(value: T | undefined | null): value is T => {
   return value !== undefined && value !== null
 }
 
-export const isNotEmpty = (value: string | any[]): boolean => {
+export const isNotEmpty = (value: string | unknown[]): boolean => {
   return value.length > 0
 }
 
@@ -126,10 +126,10 @@ export const deepClone = <T>(obj: T): T => {
   if (obj instanceof Date) return new Date(obj.getTime()) as unknown as T
   if (obj instanceof Array) return obj.map(item => deepClone(item)) as unknown as T
   if (typeof obj === 'object') {
-    const clonedObj = {} as { [key: string]: any }
+    const clonedObj = {} as Record<string, unknown>
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        clonedObj[key] = deepClone((obj as any)[key])
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        clonedObj[key] = deepClone((obj as Record<string, unknown>)[key])
       }
     }
     return clonedObj as T
@@ -137,7 +137,7 @@ export const deepClone = <T>(obj: T): T => {
   return obj
 }
 
-export const deepMerge = <T extends Record<string, any>>(
+export const deepMerge = <T extends Record<string, unknown>>(
   target: T,
   ...sources: DeepPartial<T>[]
 ): T => {
@@ -148,7 +148,7 @@ export const deepMerge = <T extends Record<string, any>>(
     for (const key in source) {
       if (isObject(source[key])) {
         if (!target[key]) Object.assign(target, { [key]: {} })
-        deepMerge(target[key], source[key])
+        deepMerge(target[key] as Record<string, unknown>, source[key] as Record<string, unknown>)
       } else {
         Object.assign(target, { [key]: source[key] })
       }
@@ -158,7 +158,7 @@ export const deepMerge = <T extends Record<string, any>>(
   return deepMerge(target, ...sources)
 }
 
-export const pick = <T extends Record<string, any>, K extends keyof T>(
+export const pick = <T extends Record<string, unknown>, K extends keyof T>(
   obj: T,
   keys: K[]
 ): Pick<T, K> => {
@@ -171,18 +171,18 @@ export const pick = <T extends Record<string, any>, K extends keyof T>(
   return result
 }
 
-export const omit = <T extends Record<string, any>, K extends keyof T>(
+export const omit = <T extends Record<string, unknown>, K extends keyof T>(
   obj: T,
   keys: K[]
 ): Omit<T, K> => {
-  const result = { ...obj } as any
+  const result = { ...obj }
   keys.forEach(key => {
     delete result[key]
   })
   return result as Omit<T, K>
 }
 
-export const isEmpty = (obj: any): boolean => {
+export const isEmpty = (obj: unknown): boolean => {
   if (obj == null) return true
   if (typeof obj === 'string' || Array.isArray(obj)) return obj.length === 0
   if (typeof obj === 'object') return Object.keys(obj).length === 0
@@ -194,7 +194,7 @@ export const unique = <T>(array: T[]): T[] => {
   return Array.from(new Set(array))
 }
 
-export const groupBy = <T, K extends keyof any>(
+export const groupBy = <T, K extends string | number | symbol>(
   array: T[],
   getKey: (item: T) => K
 ): Record<K, T[]> => {
@@ -378,7 +378,7 @@ export const localStorageAdapter = createStorageAdapter(localStorage)
 export const sessionStorageAdapter = createStorageAdapter(sessionStorage)
 
 // =============== PERFORMANCE UTILITIES ===============
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void => {
@@ -390,7 +390,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   }
 }
 
-export const throttle = <T extends (...args: any[]) => any>(
+export const throttle = <T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void => {
@@ -405,18 +405,18 @@ export const throttle = <T extends (...args: any[]) => any>(
   }
 }
 
-export const memoize = <T extends (...args: any[]) => any>(
+export const memoize = <T extends (...args: never[]) => unknown>(
   func: T
 ): T => {
-  const cache = new Map()
+  const cache = new Map<string, ReturnType<T>>()
   
   return ((...args: Parameters<T>) => {
     const key = JSON.stringify(args)
     if (cache.has(key)) {
-      return cache.get(key)
+      return cache.get(key) as ReturnType<T>
     }
     
-    const result = func(...args)
+    const result = func(...args) as ReturnType<T>
     cache.set(key, result)
     return result
   }) as T
@@ -425,7 +425,7 @@ export const memoize = <T extends (...args: any[]) => any>(
 // =============== ANALYTICS UTILITIES ===============
 export const createAnalyticsEvent = (
   name: string,
-  properties: Record<string, any> = {},
+  properties: Record<string, string | number | boolean | null> = {},
   userId?: string
 ): AnalyticsEvent => ({
   name,
@@ -444,7 +444,7 @@ export const parseQueryParams = (search: string): Record<string, string> => {
   return Object.fromEntries(new URLSearchParams(search))
 }
 
-export const buildQueryString = (params: Record<string, any>): string => {
+export const buildQueryString = (params: Record<string, string | number | boolean | null | undefined>): string => {
   const searchParams = new URLSearchParams()
   
   Object.entries(params).forEach(([key, value]) => {

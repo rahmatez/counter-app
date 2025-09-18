@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Track error analytics
     const analyticsEvent = createAnalyticsEvent('error_boundary_triggered', {
       errorMessage: error.message,
-      errorStack: error.stack,
+      errorStack: error.stack || null,
       componentStack: errorInfo.componentStack || null,
       errorBoundary: this.constructor.name
     })

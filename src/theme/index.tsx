@@ -4,14 +4,18 @@
  * Only React components for Fast Refresh compatibility
  */
 
-import React, { createContext, useContext, useMemo, useEffect } from 'react'
+import React, { createContext, useMemo, useEffect } from 'react'
 import type { Theme, ThemeContextValue } from '../types'
 import { ThemeMode } from '../types'
 import { useTheme as useThemeHook } from '../hooks'
 import { generateThemeCSS, createCustomTheme } from './utils'
+import { setThemeContext, useThemeContext } from './hooks'
 
 // =============== THEME CONTEXT ===============
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
+
+// Setup context reference for hooks
+setThemeContext(ThemeContext)
 
 export interface ThemeProviderProps {
   children: React.ReactNode
@@ -31,15 +35,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       {children}
     </ThemeContext.Provider>
   )
-}
-
-// =============== THEME CONSUMER HOOK ===============
-export const useThemeContext = (): ThemeContextValue => {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useThemeContext must be used within a ThemeProvider')
-  }
-  return context
 }
 
 // =============== ENHANCED THEME PROVIDER ===============
